@@ -27,6 +27,10 @@
 <body>
   <div id="map"></div>
   <script>
+    // 전역 객체들을 저장할 네임스페이스
+    window.naverMap = null;
+    window.markers = {};
+
     function initMap() {
       console.log("네이버 지도 초기화 시작...");
       try {
@@ -40,12 +44,12 @@
           zoomControl: true,
         };
 
-        console.log('지도 옵션 설정됨:', JSON.stringify(mapOptions));
-        const map = new naver.maps.Map('map', mapOptions);
+        // 지도 인스턴스를 전역 변수에 저장
+        window.naverMap = new naver.maps.Map('map', mapOptions);
+        console.log("네이버 지도 생성 성공");
 
         // 지도 로드 완료 이벤트
-        naver.maps.Event.once(map, 'init', function () {
-          // 지도가 초기화되면 부모 앱에 메시지 전송
+        naver.maps.Event.once(window.naverMap, 'init', function () {
           window.ReactNativeWebView?.postMessage(JSON.stringify({
             type: 'mapInit',
             message: '지도 초기화 완료'
@@ -53,7 +57,7 @@
         });
 
         // 에러 이벤트 리스너
-        naver.maps.Event.addListener(map, 'error', function (error) {
+        naver.maps.Event.addListener(window.naverMap, 'error', function (error) {
           window.ReactNativeWebView?.postMessage(JSON.stringify({
             type: 'error',
             message: error
@@ -61,7 +65,7 @@
         });
 
         // 클릭 이벤트 리스너
-        naver.maps.Event.addListener(map, 'click', function (e) {
+        naver.maps.Event.addListener(window.naverMap, 'click', function (e) {
           window.ReactNativeWebView?.postMessage(JSON.stringify({
             type: 'click',
             data: {
