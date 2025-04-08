@@ -50,6 +50,7 @@
 
         // 지도 로드 완료 이벤트
         naver.maps.Event.once(window.naverMap, 'init', function () {
+          console.log("지도 초기화 완료");
           window.ReactNativeWebView?.postMessage(JSON.stringify({
             type: 'mapInit',
             message: '지도 초기화 완료'
@@ -58,14 +59,16 @@
 
         // 에러 이벤트 리스너
         naver.maps.Event.addListener(window.naverMap, 'error', function (error) {
+          console.error("지도 초기화 에러:", error);
           window.ReactNativeWebView?.postMessage(JSON.stringify({
             type: 'error',
-            message: error
+            message: error.toString()
           }));
         });
 
         // 클릭 이벤트 리스너
         naver.maps.Event.addListener(window.naverMap, 'click', function (e) {
+          console.log("지도 클릭:", e.coord.lat(), e.coord.lng());
           window.ReactNativeWebView?.postMessage(JSON.stringify({
             type: 'click',
             data: {
@@ -76,12 +79,72 @@
         });
 
       } catch (error) {
+        console.error("지도 초기화 에러:", error);
         window.ReactNativeWebView?.postMessage(JSON.stringify({
           type: 'error',
           message: error.toString()
         }));
       }
     }
+
+    // 마커 관련 함수들
+    window.addMarker = function (lat, lng, id) {
+      try {
+        console.log("마커 추가 시도:", lat, lng, id);
+        if (!window.naverMap) {
+          throw new Error("지도가 초기화되지 않았습니다.");
+        }
+
+        // 이미 존재하는 마커라면 제거
+        if (window.markers[id]) {
+          window.markers[id].setMap(null);
+          delete window.markers[id];
+        }
+
+        const marker = new naver.maps.Marker({
+          position: new naver.maps.LatLng(lat, lng),
+          map: window.naverMap
+        });
+
+        marker.setMap(window.naverMap);
+        window.markers[id] = marker;
+
+        // 마커 클릭 이벤트
+        naver.maps.Event.addListener(marker, 'click', function () {
+          console.log("마커 클릭:", id);
+          window.ReactNativeWebView?.postMessage(JSON.stringify({
+            type: 'markerClick',
+            id: id
+          }));
+        });
+
+        console.log("마커 생성 성공:", id);
+        return true;
+      } catch (error) {
+        console.error("마커 생성 에러:", error);
+        window.ReactNativeWebView?.postMessage(JSON.stringify({
+          type: 'error',
+          message: `마커 생성 실패 (${id}): ${error.toString()}`
+        }));
+        return false;
+      }
+    };
+
+    window.removeMarker = function (id) {
+      try {
+        console.log("마커 제거 시도:", id);
+        if (window.markers[id]) {
+          window.markers[id].setMap(null);
+          delete window.markers[id];
+          console.log("마커 제거 성공:", id);
+          return true;
+        }
+        return false;
+      } catch (error) {
+        console.error("마커 제거 에러:", error);
+        return false;
+      }
+    };
 
     // 페이지 로드 완료 시 초기화
     window.addEventListener('load', initMap);
