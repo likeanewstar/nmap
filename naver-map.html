@@ -103,7 +103,8 @@
 
         const marker = new naver.maps.Marker({
           position: new naver.maps.LatLng(lat, lng),
-          map: window.naverMap
+          map: window.naverMap,
+          map: map // ❗ 이게 있어야 지도 위에 마커가 보입니다.
         });
 
         marker.setMap(window.naverMap);
