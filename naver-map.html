@@ -88,9 +88,9 @@
     }
 
     // 마커 관련 함수들
-    window.addMarker = function (lat, lng, id) {
+    window.addMarker = function (lat, lng, id, title = '', options = {}) {
       try {
-        console.log("마커 추가 시도:", lat, lng, id);
+        console.log("마커 추가 시도:", lat, lng, id, title, options);
         if (!window.naverMap) {
           throw new Error("지도가 초기화되지 않았습니다.");
         }
@@ -101,13 +101,39 @@
           delete window.markers[id];
         }
 
-        const marker = new naver.maps.Marker({
+        const markerOptions = {
           position: new naver.maps.LatLng(lat, lng),
-          map: window.naverMap,
-          map: map // ❗ 이게 있어야 지도 위에 마커가 보입니다.
-        });
+          map: window.naverMap
+        };
 
-        marker.setMap(window.naverMap);
+        // 마커 아이콘 설정
+        if (options.icon) {
+          markerOptions.icon = {
+            url: options.icon.url,
+            size: new naver.maps.Size(options.icon.size.width, options.icon.size.height),
+            anchor: new naver.maps.Point(options.icon.anchor.x, options.icon.anchor.y)
+          };
+        }
+
+        const marker = new naver.maps.Marker(markerOptions);
+
+        // 타이틀이 있으면 정보창 생성
+        if (title) {
+          const infoWindow = new naver.maps.InfoWindow({
+            content: `<div style="padding:10px;min-width:200px;text-align:center;font-size:14px;">${title}</div>`
+          });
+
+          // 마커에 마우스 올리면 정보창 표시
+          naver.maps.Event.addListener(marker, 'mouseover', function () {
+            infoWindow.open(window.naverMap, marker);
+          });
+
+          // 마커에서 마우스 나가면 정보창 닫기
+          naver.maps.Event.addListener(marker, 'mouseout', function () {
+            infoWindow.close();
+          });
+        }
+
         window.markers[id] = marker;
 
         // 마커 클릭 이벤트
